@@ -1,0 +1,115 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+#install.packages("tidytext")
+#install.packages("sf")
+#install.packages("maps")
+#install.packages("mapproj")
+library(tidyverse)
+library(tidytext)
+library(ggplot2)
+library(sf)
+library(readxl)
+library(readr)
+library(maps)
+library(mapproj)
+library(dplyr)
+library(plotly)
+```
+```{r}
+#Reading Hate Crime data
+hate_crime <- read.csv('data/hate_crimes.csv')
+```
+```{r}
+# Load US State Map
+states <- map_data("state")
+```
+```{r}
+# mismatched letter cases
+avg_hatecrimes_per_100k_fbi <- hate_crime %>% select(state, avg_hatecrimes_per_100k_fbi)
+avg_hatecrimes_per_100k_fbi$state <- avg_hatecrimes_per_100k_fbi$state %>% str_to_title()
+states$region <- states$region %>% str_to_title()
+```
+```{r}
+# removing Alaska & Hawaii :
+avg_hatecrimes_per_100k_fbi <- avg_hatecrimes_per_100k_fbi %>% filter(state!="Hawaii" & state!="Alaska")
+```
+```{r}
+# merge the data
+mapdata <- merge(states, avg_hatecrimes_per_100k_fbi, by.x = "region", by.y = "state")
+```
+```{r}
+#Create a heatmap
+p1 <- ggplot(data=mapdata) +
+  geom_polygon(mapping = aes(x=long, y=lat, group=group, fill = avg_hatecrimes_per_100k_fbi)) +
+  coord_map() +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        panel.grid = element_blank(),
+        panel.background = element_rect(fill = "gray50"),
+        plot.background = element_blank()) +
+  scale_fill_gradient(name="Avg. No. Hate Crimes per 100k", low = "white", high="red")
+ggplotly(p1)
+```
+```{r}
+#Reading datasets from year 2009 to 2018
+hate_crime_2009 <- read_excel('data/hate_crime_2009.xls', col_names = TRUE, col_types = NULL, na = "", skip = 2)
+hate_crime_2010 <- read_excel('data/hate_crime_2010.xls', col_names = TRUE, col_types = NULL, na = "", skip = 2)
+hate_crime_2011 <- read_excel('data/hate_crime_2011.xls', col_names = TRUE, col_types = NULL, na = "", skip = 2)
+hate_crime_2012 <- read_excel('data/hate_crime_2012.xls', col_names = TRUE, col_types = NULL, na = "", skip = 2)
+hate_crime_2013 <- read_excel('data/hate_crime_2013.xls', col_names = TRUE, col_types = NULL, na = "", skip = 2)
+hate_crime_2014 <- read_excel('data/hate_crime_2014.xls', col_names = TRUE, col_types = NULL, na = "", skip = 2)
+hate_crime_2015 <- read_excel('data/hate_crime_2015.xls', col_names = TRUE, col_types = NULL, na = "", skip = 2)
+hate_crime_2016 <- read_excel('data/hate_crime_2016.xls', col_names = TRUE, col_types = NULL, na = "", skip = 2)
+hate_crime_2017 <- read_excel('data/hate_crime_2017.xls', col_names = TRUE, col_types = NULL, na = "", skip = 2)
+hate_crime_2018 <- read_excel('data/hate_crime_2018.xls', col_names = TRUE, col_types = NULL, na = "", skip = 2)
+
+```
+```{r}
+hate_crime_2012 <- hate_crime_2012 %>% 
+  select(-c(...6,...7,...8,...9))
+
+hate_crime_2013 <- hate_crime_2013 %>% 
+  select(-c(...6,...7,...8,...9))
+
+hate_crime_2014 <- hate_crime_2014 %>% 
+  select(-c(...6,...7,...8,...9))
+
+hate_crime_2016 <- hate_crime_2016 %>% 
+  select(-c(...6,...7,...8))
+
+hate_crime_2017 <- hate_crime_2017 %>% 
+  select(-c(...6,...7,...8))
+```
+```{r}
+#Creating Year column to all datasets
+hate_crime_2009["Year"] <- 2009
+hate_crime_2010["Year"] <- 2010
+hate_crime_2011["Year"] <- 2011
+hate_crime_2012["Year"] <- 2012
+hate_crime_2013["Year"] <- 2013
+hate_crime_2014["Year"] <- 2014
+hate_crime_2015["Year"] <- 2015
+hate_crime_2016["Year"] <- 2016
+hate_crime_2017["Year"] <- 2017
+hate_crime_2018["Year"] <- 2018
+```
+```{r}
+#Merging all datasets
+crime_state <- rbind(hate_crime_2009,hate_crime_2010,hate_crime_2011,hate_crime_2012,hate_crime_2013,
+                     hate_crime_2014,hate_crime_2015,hate_crime_2016,hate_crime_2017,hate_crime_2018)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
