@@ -1,0 +1,70 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+#Load libraries
+#install.packages('mice')
+library(tidyselect)
+library(dplyr)
+library(mice)
+library(ggplot2)
+library(reshape2)
+
+#Reading the data
+hate_crime <- read.csv('data/hate_crimes.csv')
+```
+```{r}
+#Looking at the data
+head(hate_crime)
+```
+```{r}
+tail(hate_crime)
+```
+```{r}
+summary(hate_crime)
+```
+
+
+```{r}
+#Looking if there are any missing values
+#is.na(hate_crime)
+sum(is.na(hate_crime))
+```
+```{r}
+md.pattern(hate_crime)
+```
+```{r}
+#Using MICE method to handle missing values
+hate_crime_mice <- mice(hate_crime, m = 5, method = 'cart')
+```
+```{r}
+#View imputed datasets
+complete(hate_crime_mice, 1) %>% 
+  View()
+```
+```{r}
+#Fit a model to choose right data set
+modelFit1 <- with(hate_crime_mice,lm(avg_hatecrimes_per_100k_fbi ~ median_household_income))
+summary(pool(modelFit1))
+```
+```{r}
+#Final dataset after replacing missing values using 'MICE' method
+hate_crime1 <- complete(hate_crime_mice, 1)
+```
+```{r}
+#Looking for Hate Crime trend in US
+ggplot(hate_crime1, aes(x = state, y = 'median_household_income')) + geom_point()
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
