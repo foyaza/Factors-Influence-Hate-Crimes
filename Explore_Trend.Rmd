@@ -12,6 +12,7 @@ Try executing this chunk by clicking the *Run* button within the chunk or by pla
 #install.packages("sf")
 #install.packages("maps")
 #install.packages("mapproj")
+#install.packages("hrbrthemes")
 library(tidyverse)
 library(tidytext)
 library(ggplot2)
@@ -22,6 +23,11 @@ library(maps)
 library(mapproj)
 library(dplyr)
 library(plotly)
+library(stringr)
+library(hrbrthemes)
+library(extrafont)
+#font_import()
+#loadfonts(device = "win") 
 ```
 ```{r}
 #Reading Hate Crime data
@@ -48,7 +54,8 @@ mapdata <- merge(states, avg_hatecrimes_per_100k_fbi, by.x = "region", by.y = "s
 ```{r}
 #Create a heatmap
 p1 <- ggplot(data=mapdata) +
-  geom_polygon(mapping = aes(x=long, y=lat, group=group, fill = avg_hatecrimes_per_100k_fbi)) +
+  geom_polygon(mapping = aes(x=long, y=lat, group=group, fill = avg_hatecrimes_per_100k_fbi, text = paste(region, '<br>', avg_hatecrimes_per_100k_fbi))) + 
+   
   coord_map() +
   theme(axis.ticks = element_blank(),
         axis.text = element_blank(),
@@ -57,7 +64,7 @@ p1 <- ggplot(data=mapdata) +
         panel.background = element_rect(fill = "gray50"),
         plot.background = element_blank()) +
   scale_fill_gradient(name="Avg. No. Hate Crimes per 100k", low = "white", high="red")
-ggplotly(p1)
+ggplotly(p1, tooltip = c("text"))
 ```
 ```{r}
 #Reading datasets from year 2009 to 2018
@@ -71,6 +78,7 @@ hate_crime_2015 <- read_excel('data/hate_crime_2015.xls', col_names = TRUE, col_
 hate_crime_2016 <- read_excel('data/hate_crime_2016.xls', col_names = TRUE, col_types = NULL, na = "", skip = 2)
 hate_crime_2017 <- read_excel('data/hate_crime_2017.xls', col_names = TRUE, col_types = NULL, na = "", skip = 2)
 hate_crime_2018 <- read_excel('data/hate_crime_2018.xls', col_names = TRUE, col_types = NULL, na = "", skip = 2)
+
 
 ```
 ```{r}
@@ -103,9 +111,58 @@ hate_crime_2017["Year"] <- 2017
 hate_crime_2018["Year"] <- 2018
 ```
 ```{r}
+#Renaming columns name
+names(hate_crime_2009) <- c("State", "Number_of_Agencies", "Population_Covered", "Agencies_Submitting_Reports", "Total_Incidents_Reported", "Year")
+names(hate_crime_2010) <- c("State", "Number_of_Agencies", "Population_Covered", "Agencies_Submitting_Reports", "Total_Incidents_Reported", "Year")
+names(hate_crime_2011) <- c("State", "Number_of_Agencies", "Population_Covered", "Agencies_Submitting_Reports", "Total_Incidents_Reported", "Year")
+names(hate_crime_2012) <- c("State", "Number_of_Agencies", "Population_Covered", "Agencies_Submitting_Reports", "Total_Incidents_Reported", "Year")
+names(hate_crime_2013) <- c("State", "Number_of_Agencies", "Population_Covered", "Agencies_Submitting_Reports", "Total_Incidents_Reported", "Year")
+names(hate_crime_2014) <- c("State", "Number_of_Agencies", "Population_Covered", "Agencies_Submitting_Reports", "Total_Incidents_Reported", "Year")
+names(hate_crime_2015) <- c("State", "Number_of_Agencies", "Population_Covered", "Agencies_Submitting_Reports", "Total_Incidents_Reported", "Year")
+names(hate_crime_2016) <- c("State", "Number_of_Agencies", "Population_Covered", "Agencies_Submitting_Reports", "Total_Incidents_Reported", "Year")
+names(hate_crime_2017) <- c("State", "Number_of_Agencies", "Population_Covered", "Agencies_Submitting_Reports", "Total_Incidents_Reported", "Year")
+names(hate_crime_2018) <- c("State", "Number_of_Agencies", "Population_Covered", "Agencies_Submitting_Reports", "Total_Incidents_Reported", "Year")
+```
+```{r}
 #Merging all datasets
-crime_state <- rbind(hate_crime_2009,hate_crime_2010,hate_crime_2011,hate_crime_2012,hate_crime_2013,
-                     hate_crime_2014,hate_crime_2015,hate_crime_2016,hate_crime_2017,hate_crime_2018)
+crime_state <- rbind(hate_crime_2009, hate_crime_2010, hate_crime_2011, hate_crime_2012, hate_crime_2013, hate_crime_2014, hate_crime_2015, hate_crime_2016, hate_crime_2017, hate_crime_2018)
+
+#Checking State Column if there anything to remove
+#unique(crime_state$State)
+
+#Deleting unnecessary rows
+crime_state <- crime_state[-c(155, 168, 208, 221, 262, 275, 311, 316, 368, 369, 370, 525, 526, 527, 528), ]
+
+#saveRDS(crime_state,file="Hate_Crimes_in_US/data/crime_state.RDS")
+```
+```{r}
+#Creating a dataset only for total in each year
+crime_total <- crime_state[c(1,52,103,155,206,258,309,360,411,462),]
+
+#Looking at the trend
+t1 <- ggplot(crime_total, aes(x = Year, Total_Incidents_Reported)) +
+  geom_line(color = 'cyan') +
+  geom_area(fill = 'cyan', alpha = .1) +
+  labs(x = 'Year'
+       , y = 'Total Number of Hate Crimes'
+       , title = "Hate Crimes Trend in US for Years 2009 to 2018") +
+  theme(text = element_text(color = "#444444")
+        ,panel.background = element_rect(fill = '#444B5A')
+        ,panel.grid.minor = element_line(color = '#4d5566')
+        ,panel.grid.major = element_line(color = '#586174')
+        ,plot.title = element_text(size = 15)
+        ,axis.title = element_text(size = 10, color = '#555555')
+        ,axis.title.y = element_text(vjust = 1, angle = 0)
+        ,axis.title.x = element_text(hjust = 0)
+        )
+ggplotly(t1)
+```
+```{r}
+t2 <- ggplot(crime_total, aes(x=Year, y=Total_Incidents_Reported)) +
+  geom_line( color="#69b3a2", size=2, alpha=0.9, linetype=2) +
+  theme_ipsum() +
+  ggtitle("Hate Crimes in US")
+ggplotly(t2)
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
