@@ -10,11 +10,15 @@ Try executing this chunk by clicking the *Run* button within the chunk or by pla
 ```{r}
 #Load libraries
 #install.packages('mice')
+#install.packages("corrplot")
+#packageVersion('plotly')
 library(tidyselect)
 library(dplyr)
 library(mice)
 library(ggplot2)
 library(reshape2)
+library(plotly)
+library(corrplot)
 
 #Reading the data
 hate_crime <- read.csv('data/hate_crimes.csv')
@@ -40,27 +44,112 @@ sum(is.na(hate_crime))
 md.pattern(hate_crime)
 ```
 ```{r}
+#Chicking summary of variables in interest
+hate_crime %>% 
+  select(hate_crimes_per_100k_splc) %>% 
+  summary()
+# avg_hatecrimes_per_100k_fbi
+#  Min.   : 0.2669            
+#  1st Qu.: 1.2931            
+#  Median : 1.9871            
+#  Mean   : 2.3676            
+#  3rd Qu.: 3.1843            
+#  Max.   :10.9535            
+#  NA's   :1
+
+
+# hate_crimes_per_100k_splc
+#  Min.   :0.06745          
+#  1st Qu.:0.14271          
+#  Median :0.22620          
+#  Mean   :0.30409          
+#  3rd Qu.:0.35694          
+#  Max.   :1.52230          
+#  NA's   :4
+
 #Using MICE method to handle missing values
-hate_crime_mice <- mice(hate_crime, m = 5, method = 'cart')
+#hate_crime_mice <- mice(hate_crime, m = 5, method = 'cart')
 ```
 ```{r}
 #View imputed datasets
-complete(hate_crime_mice, 1) %>% 
-  View()
+#complete(hate_crime_mice, 1) %>% 
+ # View()
 ```
 ```{r}
 #Fit a model to choose right data set
-modelFit1 <- with(hate_crime_mice,lm(avg_hatecrimes_per_100k_fbi ~ median_household_income))
-summary(pool(modelFit1))
+#modelFit1 <- with(hate_crime_mice,lm(avg_hatecrimes_per_100k_fbi ~ median_household_income))
+#summary(pool(modelFit1))
 ```
 ```{r}
 #Final dataset after replacing missing values using 'MICE' method
-hate_crime1 <- complete(hate_crime_mice, 1)
+#hate_crime1 <- complete(hate_crime_mice, 1)
 ```
 ```{r}
 #Looking for Hate Crime trend in US
-ggplot(hate_crime1, aes(x = state, y = 'median_household_income')) + geom_point()
-
+p1 <- ggplot(hate_crime, aes(x = state, y = avg_hatecrimes_per_100k_fbi, group = 1)) + geom_line(col = "red")+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggplotly(p1)
+```
+```{r}
+#Looking on Distribution of Hate Crime
+h1 <- ggplot(hate_crime,aes(hate_crimes_per_100k_splc)) + geom_histogram(col = 'red', alpha = .2, aes(fill = ..count..)) + geom_density(col = 3) + labs(title = "Distribution on Hate Crime Per 100K SPLC") + labs(x = "Hate Crime Per 100K",y = "Frequency")
+ggplotly(h1)
+```
+```{r}
+h2 <- ggplot(hate_crime,aes(avg_hatecrimes_per_100k_fbi)) + geom_histogram(aes(y=..density..), col = 'red', alpha = .2) + geom_density(col = 3) + labs(title = "Distribution on Hate Crime Per 100K FBI") + labs(x = "Hate Crime Per 100K",y = "Frequency")
+ggplotly(h2)
+```
+```{r}
+# options(error = recover)
+# corrs <- hate_crime %>% select(-c(state)) %>% cor()
+# tibble("variable" = corrs[12,] %>% names(),"correlation" = corrs[12,]) %>% 
+#   ggplot(aes(x = reorder(variable, correlation), y = correlation)) + geom_point() + 
+#   geom_segment(aes(xend = variable, yend = 0)) + coord_flip() + geom_line(yintercept = 0)
+```
+```{r}
+#Looking at factors influencing Hate Crimes
+f1 <- hate_crime %>%
+  ggplot(aes(x = median_household_income, y = avg_hatecrimes_per_100k_fbi)) + geom_point() + geom_smooth(method = "lm")
+ggplotly(f1)
+```
+```{r}
+f2 <- hate_crime %>%
+  ggplot(aes(x = share_unemployed_seasonal, y = avg_hatecrimes_per_100k_fbi)) + geom_point() + geom_smooth(method = "lm")
+ggplotly(f2)
+```
+```{r}
+f3 <- hate_crime %>%
+  ggplot(aes(x = share_population_in_metro_areas, y = avg_hatecrimes_per_100k_fbi)) + geom_point() + geom_smooth(method = "lm")
+ggplotly(f3)
+```
+```{r}
+f4 <- hate_crime %>%
+  ggplot(aes(x = share_population_with_high_school_degree, y = avg_hatecrimes_per_100k_fbi)) + geom_point() + geom_smooth(method = "lm")
+ggplotly(f4)
+```
+```{r}
+f5 <- hate_crime %>%
+  ggplot(aes(x = share_non_citizen, y = avg_hatecrimes_per_100k_fbi)) + geom_point() + geom_smooth(method = "lm")
+ggplotly(f5)
+```
+```{r}
+f6 <- hate_crime %>%
+  ggplot(aes(x = share_white_poverty, y = avg_hatecrimes_per_100k_fbi)) + geom_point() + geom_smooth(method = "lm")
+ggplotly(f6)
+```
+```{r}
+f7 <- hate_crime %>%
+  ggplot(aes(x = share_non_white, y = avg_hatecrimes_per_100k_fbi)) + geom_point() + geom_smooth(method = "lm")
+ggplotly(f7)
+```
+```{r}
+f8 <- hate_crime %>%
+  ggplot(aes(x = share_voters_voted_trump, y = avg_hatecrimes_per_100k_fbi)) + geom_point() + geom_smooth(method = "lm")
+ggplotly(f8)
+```
+```{r}
+f9 <- hate_crime %>%
+  ggplot(aes(x = gini_index, y = avg_hatecrimes_per_100k_fbi)) + geom_point(col = 2) + geom_smooth(method = "lm", aes(group = 1))
+ggplotly(f9)
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
