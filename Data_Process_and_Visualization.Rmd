@@ -22,6 +22,8 @@ library(corrplot)
 
 #Reading the data
 hate_crime <- read.csv('data/hate_crimes.csv')
+#Saving data
+#saveRDS(hate_crime,"data/key_factors.RDS")
 ```
 ```{r}
 #Looking at the data
